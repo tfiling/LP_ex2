@@ -22,8 +22,10 @@ verif_row_data([RowData|RestRowData], [1|RowSolution]) :-           %current ele
     CountRowData is RowData - 1,
     verif_row_data([CountRowData|RestRowData], RowSolution).
 
-verif_row_data([0|RestRowData],[0|RestRowSolution]) :-        
+verif_row_data([0|RestRowData],[0|RestRowSolution]) :-              %series of 1s matches the solution so both are 0|_ 0|_
     verif_row_data(RestRowData, RestRowSolution).
+
+verif_row_data([0],[]).                                             %finished going through one row successfully
 
 % Nanogram utils
 transpose(Rows, []) :-
