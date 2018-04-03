@@ -44,3 +44,45 @@ null_rows([[]|Rows]) :-
     null_rows(Rows).
 
 null_rows([]).
+
+%-----------------------------------------------------%
+% Task 2 - nonogram_solve
+
+nonogram_solve(nonogram(N, M, ColData, RowData), Solution) :-
+    generate_matrix(N, M, Solution),                                %create matrix of N X M free variables
+    transpose(Solution, TransposedSolution),
+    try_solve_row_simple_boxes(M, ColData, TransposedSolution),
+    try_solve_row_simple_boxes(N, RowData, Solution).
+
+try_solve_row_simple_boxes(N, [Data|RestData], [Row|RestRows]) :-
+    N > 0,
+    simple_box(N, Data, Row),
+    N1 is N - 1,
+    try_solve_row_simple_boxes(N1, RestData, RestRows).
+
+try_solve_row_simple_boxes(0, [], []).
+
+generate_matrix(N, M, [Row|RestRows]) :-                            
+    N > 0,
+    N1 is N - 1,
+    length(Row, M),
+    generate_matrix(N1, M, RestRows).
+
+generate_matrix(0, _, []).
+
+
+% Task 2 - algorithms
+
+% simple_box
+
+simple_box(N, Data, Solution) :-
+    row_sum(Data, 0, Sum),
+    length(Data, NumberOfDataElements),
+    solve_simple_box(N1, Data, Solution, Sum).
+
+row_sum([Element|RestData], Init, Sum) :-
+    Sum1 is Init + Element,
+    row_sum(RestData, Sum1, Sum).
+
+row_sum([], Init, Sum) :-
+    Init = Sum.
