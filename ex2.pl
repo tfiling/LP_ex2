@@ -86,3 +86,66 @@ row_sum([Element|RestData], Init, Sum) :-
 
 row_sum([], Init, Sum) :-
     Init = Sum.
+
+
+
+%-----------------------------------------------------%
+% Task 3 - A Ramsey Verifier
+
+% edge(X+, Y+, Graph+, Color+) - true if X and Y vertexes are connected by an edge
+edge(X, Y, [Row | _], Color) :- 
+    X is 1,
+    nth1(Y, Row, Color).
+
+edge(X, Y, [_ | T], Color) :- 
+    X > 1,
+    Z is X - 1,
+    edge(Z, Y, T, Color).
+
+% clique(VertexList+, Graph+, Color+) - true if the vertexes listed in VertexList list are a clique in Graph with edges of color Color
+clique([], _, _).
+clique([_], _, _).
+clique([X1,X2|R], Graph, Color) :- 
+    edge(X1, X2, Graph, Color), 
+    clique([X1|R], Graph, Color), 
+    clique([X2|R], Graph, Color).
+
+% cliqueN(C-, N+, Graph+, Color+) - true exists a C, sublist of the vertexes of size N, which is a clique of edges with color Color
+% inspired from https://en.wikibooks.org/wiki/Introduction_to_Programming_Languages/Exhaustive_Searches
+cliqueN(C, N, [H | T], Color) :- 
+    length(H, Len),
+    findall(Num, between(1, Len, Num), VertexList),
+    sublist(C, VertexList), 
+    length(C, N),
+    clique(C, [H | T], Color).
+
+% sublist(SubList-, List) - true is exists SubList which is a sublist of List where the elements order is kept
+% copied from https://stackoverflow.com/questions/7051400/prolog-first-list-is-sublist-of-second-list (ДМИТРИЙ МАЛИКОВ's answer)
+sublist([], _).
+sublist([X|XS], [X|XSS]) :- sublist(XS, XSS).
+sublist([X|XS], [_|XSS]) :- sublist([X|XS], XSS).
+
+% find_all_bad_cliques(S+, N+, Solution+, Clique-, Color+) -    true if exists a Clique of size greate of equal to S, 
+%                                                               with edeg color of Color, N is the count of vertexes
+%                                                               and Solution is the adjacency matrix
+find_all_bad_cliques(S, N, Solution, Clique, Color) :-
+    N > S,
+    N1 is N - 1,
+    find_all_bad_cliques(S, N1, Solution, Clique, Color).
+
+
+find_all_bad_cliques(S, N, Solution, Clique, Color) :-
+    N >= S,
+    cliqueN(Clique, N, Solution, Color).
+
+        
+
+verify_ramsey(r(S, _, N), Solution, CounterExample) :-
+    find_all_bad_cliques(S, N, Solution, CounterExample, 0).
+
+verify_ramsey(r(_, T, N), Solution, CounterExample) :-
+    find_all_bad_cliques(T, N, Solution, CounterExample, 1).
+
+verify_ramsey(r(S, T, N), Solution, ramsey) :-
+    \+ find_all_bad_cliques(S, N, Solution, _, 0),
+    \+ find_all_bad_cliques(T, N, Solution, _, 1).
