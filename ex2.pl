@@ -1,3 +1,5 @@
+%Gal Tfilin and Niv Lipetz
+%-----------------------------------------------------%
 % PART 1 - NanoGrams
 
 % Task 1 - is_nanogram
@@ -51,8 +53,9 @@ null_rows([]).
 nonogram_solve(nonogram(N, M, ColData, RowData), Solution) :-
     generate_matrix(N, M, Solution),                                %create matrix of N X M free variables
     transpose(Solution, TransposedSolution),
-    try_solve_row_simple_boxes(M, ColData, TransposedSolution),
-    try_solve_row_simple_boxes(N, RowData, Solution).
+    try_solve_row_simple_boxes(M, ColData, TransposedSolution),     %fill in necessary boxes for columns
+    try_solve_row_simple_boxes(N, RowData, Solution),               %fill in necessary boxes for rows
+    solve_nanogram().
 
 try_solve_row_simple_boxes(N, [Data|RestData], [Row|RestRows]) :-
     N > 0,
@@ -71,14 +74,42 @@ generate_matrix(N, M, [Row|RestRows]) :-
 generate_matrix(0, _, []).
 
 
-% Task 2 - algorithms
+% Algorithms for nanogram solver
 
-% simple_box
+% Simple box
 
-simple_box(N, Data, Solution) :-
-    row_sum(Data, 0, Sum),
+simple_box(_, [], []).
+
+simple_box(N, [0|RestData], []) :-
+    simple_box(N, RestData, []).
+
+simple_box(N, Data, Row) :-
+    row_sum(Data, 0, RowSum),
     length(Data, NumberOfDataElements),
-    solve_simple_box(N1, Data, Solution, Sum).
+    NumberOfDataElements > 0,
+    NumberOfMinimalZeros is NumberOfDataElements - 1,
+    RowSumWithZeros is RowSum + NumberOfMinimalZeros,
+    NumberOfBoxesLeft is N - RowSumWithZeros,
+    solve_simple_box(NumberOfBoxesLeft, Data, Row, NumberOfBoxesLeft).
+
+solve_simple_box(_, [], _, _).                                             %all data is put into the row successfully
+
+simple_boxes_solve(0, [0|RestData], [0|RestRow], 0):-                      %Keep going in the data to fill the rest of the 0s
+	simple_boxes_solve(0, RestData, RestRow, 0).
+
+solve_simple_box(0, [0|RestData], [], 0) :-                                
+    solve_simple_box(0, RestData, [], 0).
+
+solve_simple_box(NumberOfBoxesLeft, [CurrentElement|RestData], [1|RestRow], 0) :-
+    CurrentElement > 0,
+    NumberOfBoxesLeft > 0,
+    UpdatedCurrentElement is CurrentElement - 1,
+    solve_simple_box(NumberOfBoxesLeft, [UpdatedCurrentElement|RestData], RestRow, 0).
+
+solve_simple_box(NumberOfBoxesLeft, [0|RestData], [_|RestRow], _) :-      %finished a piece
+    NumberOfBoxesLeft > 0,
+    solve_simple_box(NumberOfBoxesLeft, RestData, RestRow, _).
+
 
 row_sum([Element|RestData], Init, Sum) :-
     Sum1 is Init + Element,
