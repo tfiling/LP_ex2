@@ -149,3 +149,58 @@ verify_ramsey(r(_, T, N), Solution, CounterExample) :-
 verify_ramsey(r(S, T, N), Solution, ramsey) :-
     \+ find_all_bad_cliques(S, N, Solution, _, 0),
     \+ find_all_bad_cliques(T, N, Solution, _, 1).
+
+
+%-----------------------------------------------------%
+% Task 4 - A Ramsey (Brute Force) Solver
+
+% find ramsey(r(S, T, N), Solution)
+
+% make_row_first_element(N+, Matrix-) - generates a random top half of adjacency matrix
+make_row_first_element(N, [[0 | Rest] | AccTail]) :-
+    N > 1,
+    N1 is N - 1,
+    make_row_tail(N1, Rest),
+    make_row_first_element(N1, AccTail).
+
+make_row_first_element(1, [[0]]).
+
+% make_row_tail(N+, Row-) - generates the tail of the row in the adjacency matrix
+make_row_tail(N, [0 | Rest]) :-
+    N >= 1,
+    N1 is N - 1,
+    make_row_tail(N1, Rest).
+
+make_row_tail(N, [1 | Rest]) :-
+    N >= 1,
+    N1 is N - 1,
+    make_row_tail(N1, Rest).
+
+make_row_tail(0, []).
+
+% complete_matrix(N, HalfMatrix, ResultMatrix) completes the top half of the adjacency matrix with values of "_"
+complete_matrix(N, [HalfHead | HalfTail], [Head | Tail]) :-
+    length(HalfHead, Len),
+    Len < N,
+    complete_matrix(N, [[_ | HalfHead] | HalfTail], [Head | Tail]).
+
+complete_matrix(N, [Head | HalfTail], [Head | Tail]) :-
+    length(Head, N),
+    complete_matrix(N, HalfTail, Tail).
+
+complete_matrix(_, [], []).
+
+
+find_ramsey(r(S, T, N), Solution) :-
+    make_row_first_element(N, HalfMatrix),
+    complete_matrix(N, HalfMatrix, Solution),
+    transpose(Solution, Solution),                  % a valid adjacency is symetric which means that it equal to its transpos 
+                                                    % -> will fill the "_" values applied from complete_matrix
+    verify_ramsey(r(S, T, N), Solution, ramsey),
+    print_mat(Solution).
+
+print_mat([H | T]) :-
+    writeln(H),
+    print_mat(T).
+
+print_mat([]).
