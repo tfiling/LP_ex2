@@ -83,38 +83,58 @@ generate_matrix(0, _, []).
 % Algorithms for nanogram solver
 
 % Simple box
-
-simple_box(_, [], []).
-
-simple_box(N, [0|RestData], []) :-
-    simple_box(N, RestData, []).
-
 simple_box(N, Data, Row) :-
+    simple_box_left(N, Data, RowLeft),
+    simple_box_right(N, Data, RowRight),
+    find_intersections(RowLeft, RowRight, Row).
+
+find_intersections([], [], []).
+find_intersections([LeftElement|RowLeft], [RightElement|RowRight], [1|Row]) :-
+    LeftElement == RightElement,
+    LeftElement == 1,                                                           %If equal 1 then add 1 to row
+    find_intersections(RowLeft, RowRight, Row).
+find_intersections([LeftElement|RowLeft], [RightElement|RowRight], [0|Row]) :-
+    LeftElement == RightElement,
+    LeftElement == 0,                                                       %If equal 0 then don't add 1 to row
+    find_intersections(RowLeft, RowRight, Row).
+find_intersections([LeftElement|RowLeft], [RightElement|RowRight], [0|Row]) :-
+    LeftElement \= RightElement,
+    find_intersections(RowLeft, RowRight, Row).
+
+
+simple_box_right(N, Data, Row) :-
+    reverse(Data, DataReversed),
+    simple_box_left(N, DataReversed, LeftSolution),
+    reverse(LeftSolution, Row).
+
+simple_box_left(N, Data, Row) :-
     row_sum(Data, 0, RowSum),
     length(Data, NumberOfDataElements),
     NumberOfDataElements > 0,
     NumberOfMinimalZeros is NumberOfDataElements - 1,
     RowSumWithZeros is RowSum + NumberOfMinimalZeros,
     NumberOfBoxesLeft is N - RowSumWithZeros,
-    solve_simple_box(NumberOfBoxesLeft, Data, Row, NumberOfBoxesLeft).
+    solve_simple_box_left(NumberOfBoxesLeft, Data, RowWithExtra0AtEnd),
+    reverse(RowWithExtra0AtEnd, ReversedRowWithExtra0AtEnd),
+    cut_first_elements(1, ReversedRowWithExtra0AtEnd, CuttedReversed),                            %solve_simple_boxes returns an extra 0 at the end of each solution
+    reverse(CuttedReversed, Row).
 
-solve_simple_box(_, [], _, _).                                             %all data is put into the row successfully
+solve_simple_box_left(NumberOfBoxesLeft, [CurrentRule|Data], [1|RestRow]) :-         %Add 1 to row because currentRule > 0
+    NumberOfBoxesLeft >= 0,
+    CurrentRule > 0,
+    UpdatedCurrentRule is CurrentRule - 1,
+    solve_simple_box_left(NumberOfBoxesLeft, [UpdatedCurrentRule|Data], RestRow).
 
-solve_simple_box(0, [0|RestData], [0|RestRow], 0):-                      %Keep going in the data to fill the rest of the 0s
-	solve_simple_box(0, RestData, RestRow, 0).
+solve_simple_box_left(NumberOfBoxesLeft, [0|Data], [0|RestRow]) :-                   %add 0 to row if finished rule (must be 0 between rules)
+    NumberOfBoxesLeft >= 0,
+    solve_simple_box_left(NumberOfBoxesLeft, Data, RestRow).
 
-solve_simple_box(0, [0|RestData], [], 0) :-                                
-    solve_simple_box(0, RestData, [], 0).
+solve_simple_box_left(NumberOfBoxesLeft, [], [0|RestRow]) :-                         %finish all rules so add 0s to row.
+    NumberOfBoxesLeft >= 0,
+    UpdatedNumberOfBoxesLeft is NumberOfBoxesLeft - 1,
+    solve_simple_box_left(UpdatedNumberOfBoxesLeft, [], RestRow).
 
-solve_simple_box(NumberOfBoxesLeft, [CurrentElement|RestData], [1|RestRow], 0) :-
-    CurrentElement > 0,
-    NumberOfBoxesLeft > 0,
-    UpdatedCurrentElement is CurrentElement - 1,
-    solve_simple_box(NumberOfBoxesLeft, [UpdatedCurrentElement|RestData], RestRow, 0).
-
-solve_simple_box(NumberOfBoxesLeft, [0|RestData], [_|RestRow], _) :-      %finished a piece
-    NumberOfBoxesLeft > 0,
-    solve_simple_box(NumberOfBoxesLeft, RestData, RestRow, _).
+solve_simple_box_left(0, [], []).
 
 
 row_sum([Element|RestData], Init, Sum) :-
@@ -287,6 +307,8 @@ last(K, N, Last) :-
     !,
     first(K, List, [], Last).                                       %apply first on the last K elements
     
+
+%erase first NumElementsToCut elements of list
 cut_first_elements(NumElementsToCut, [_|List], CuttedList) :-
     NumElementsToCut > 0,
     NumElementsToCut1 is NumElementsToCut - 1,
