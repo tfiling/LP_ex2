@@ -52,6 +52,10 @@ null_rows([]).
 %-----------------------------------------------------%
 % Task 2 - nonogram_solve
 
+% heuristics => do the largest row first
+% row, column, row, column
+% fail if not enough space for rest of row
+
 nonogram_solve(nonogram(N, M, ColData, RowData), Solution) :-
     generate_matrix(N, M, Solution),                                %create matrix of N X M free variables
     transpose(Solution, TransposedSolution),
@@ -237,3 +241,74 @@ print_mat([H | T]) :-
     print_mat(T).
 
 print_mat([]).
+
+
+
+%-----------------------------------------------------%
+
+%choose_n_from_k
+create_list_size_n(0, Acc, List) :-
+    Acc = List.
+
+create_list_size_n(N, Acc, List) :-
+    N1 is N - 1,
+    create_list_size_n(N1, [N|Acc], List).
+
+choose_k_from_n(K, N, [First|Rest]) :-
+    first(K, N, First),
+    last(K, N, Last),
+    choose_k_from_n_aux(N, First, Last, Rest).
+choose_k_from_n_aux(_, Last, Last, []).
+choose_k_from_n_aux(N, Prev, Last, [Next|Rest]) :-
+    increment(N, Prev, [], Next),
+    choose_k_from_n_aux(N, Next, Last, Rest).
+
+first(K, N, First) :-
+    integer(K),
+    integer(N),
+    K =< N,
+    create_list_size_n(N, [], ListOfN),
+    !,
+    first(K, ListOfN, [], First).
+first(K, [Element|RestListOfN], Acc, First) :-
+    K > 0,
+    K1 is K - 1,
+    first(K1, RestListOfN, [Element|Acc], First).
+first(0, _, Acc, First) :-
+    Acc = First.
+
+last(K, N, Last) :-
+    integer(K),
+    integer(N),
+    K =< N,
+    create_list_size_n(N, [], ListOfN),
+    NumberOfElementsToCut is N - K,
+    cut_first_elements(NumberOfElementsToCut, ListOfN, List),
+    !,
+    first(K, List, [], Last).
+    
+cut_first_elements(NumElementsToCut, [_|List], CuttedList) :-
+    NumElementsToCut > 0,
+    NumElementsToCut1 is NumElementsToCut - 1,
+    cut_first_elements(NumElementsToCut1, List, CuttedList).
+
+cut_first_elements(0, List, CuttedList) :-
+    CuttedList = List.
+
+/*binary increment
+increment([0|Xs],[1|Xs]).       %find first 0 and replace with 1
+increment([1|Xs],[0|Ys]) :-
+    increment(Xs, Ys).
+*/
+
+increment(N, [Element|RestElements], Acc, Next) :-      %Get to a digit that is less than N.. Add 1 to it and return result
+    Element < N,
+    Element1 is Element + 1,
+    append(Acc, [Element1], List),                      %Add all of the accumulated digits from when Element = N to the digit we just increased by 1
+    append(List, RestElements, Next).                   %Add all of the untouched digits (RestElements).
+
+increment(N, [Element|RestElements], Acc, Next) :-
+    Element = N,
+    Element1 is Element - 1,
+    N1 is N - 1,
+    increment(N1, RestElements, [Element1|Acc], Next).  %Accumulate all of the digits that are = N.
