@@ -1,3 +1,5 @@
+%Gal Tfilin and Niv Lipetz
+
 :- use_module(naive_sat).
 
 % PART 1 - NanoGrams
@@ -94,8 +96,8 @@ simple_box(N, Data, Row) :-
 
 solve_simple_box(_, [], _, _).                                             %all data is put into the row successfully
 
-simple_boxes_solve(0, [0|RestData], [0|RestRow], 0):-                      %Keep going in the data to fill the rest of the 0s
-	simple_boxes_solve(0, RestData, RestRow, 0).
+solve_simple_box(0, [0|RestData], [0|RestRow], 0):-                      %Keep going in the data to fill the rest of the 0s
+	solve_simple_box(0, RestData, RestRow, 0).
 
 solve_simple_box(0, [0|RestData], [], 0) :-                                
     solve_simple_box(0, RestData, [], 0).
