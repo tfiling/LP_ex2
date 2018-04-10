@@ -1,5 +1,5 @@
-%Gal Tfilin and Niv Lipetz
-%-----------------------------------------------------%
+:- use_module(naive_sat).
+
 % PART 1 - NanoGrams
 
 % Task 1 - is_nanogram
