@@ -295,12 +295,6 @@ cut_first_elements(NumElementsToCut, [_|List], CuttedList) :-
 cut_first_elements(0, List, CuttedList) :-
     CuttedList = List.
 
-/*binary increment
-increment([0|Xs],[1|Xs]).       %find first 0 and replace with 1
-increment([1|Xs],[0|Ys]) :-
-    increment(Xs, Ys).
-*/
-
 increment(N, [Element|RestElements], Acc, Next) :-      %Get to a digit that is less than N.. Add 1 to it and return result
     Element < N,
     Element1 is Element + 1,
