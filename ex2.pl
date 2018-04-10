@@ -237,3 +237,24 @@ print_mat([H | T]) :-
     print_mat(T).
 
 print_mat([]).
+
+
+
+
+% list_list_vertices_to_edges(List_of_lists_of_vertices+, Matrix+, List_of_lists_of_edges-)
+list_list_vertices_to_edges([H | Tail], Matrix, [HEdges | TailEdges]) :-
+    list_vertices_to_edges(H, Matrix, HEdges),
+    list_list_vertices_to_edges(Tail, Matrix, TailEdges).
+
+list_list_vertices_to_edges([], _, []).
+
+% list_list_vertices_to_edges(list_of_vertices+, Matrix+, list_of_edges-)
+list_vertices_to_edges([X1, X2 | RestV], Matrix, [Edge | RestE1E2]) :-
+    nth1(X1, Matrix, Row),
+    nth1(X2, Row, Edge),
+    list_vertices_to_edges([X1 | RestV], Matrix, RestE1),
+    list_vertices_to_edges([X2 | RestV], Matrix, RestE2),
+    append([RestE1, RestE2], RestE1E2).
+
+list_vertices_to_edges([], _, []).
+list_vertices_to_edges([_], _, []).
