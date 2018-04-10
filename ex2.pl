@@ -246,7 +246,7 @@ print_mat([]).
 
 %-----------------------------------------------------%
 
-%choose_n_from_k
+%choose_n_from_k => based on the code learnt in class
 create_list_size_n(0, Acc, List) :-
     Acc = List.
 
@@ -283,9 +283,9 @@ last(K, N, Last) :-
     K =< N,
     create_list_size_n(N, [], ListOfN),
     NumberOfElementsToCut is N - K,
-    cut_first_elements(NumberOfElementsToCut, ListOfN, List),
+    cut_first_elements(NumberOfElementsToCut, ListOfN, List),       %cut out the N-K of the first elements
     !,
-    first(K, List, [], Last).
+    first(K, List, [], Last).                                       %apply first on the last K elements
     
 cut_first_elements(NumElementsToCut, [_|List], CuttedList) :-
     NumElementsToCut > 0,
@@ -306,3 +306,22 @@ increment(N, [Element|RestElements], Acc, Next) :-
     Element1 is Element - 1,
     N1 is N - 1,
     increment(N1, RestElements, [Element1|Acc], Next).  %Accumulate all of the digits that are = N.
+
+
+% list_list_vertices_to_edges(List_of_lists_of_vertices+, Matrix+, List_of_lists_of_edges-)
+list_list_vertices_to_edges([H | Tail], Matrix, [HEdges | TailEdges]) :-
+    list_vertices_to_edges(H, Matrix, HEdges),
+    list_list_vertices_to_edges(Tail, Matrix, TailEdges).
+
+list_list_vertices_to_edges([], _, []).
+
+% list_list_vertices_to_edges(list_of_vertices+, Matrix+, list_of_edges-)
+list_vertices_to_edges([X1, X2 | RestV], Matrix, [Edge | RestE1E2]) :-
+    nth1(X1, Matrix, Row),
+    nth1(X2, Row, Edge),
+    list_vertices_to_edges([X1 | RestV], Matrix, RestE1),
+    list_vertices_to_edges([X2 | RestV], Matrix, RestE2),
+    append([RestE1, RestE2], RestE1E2).
+
+list_vertices_to_edges([], _, []).
+list_vertices_to_edges([_], _, []).
