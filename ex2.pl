@@ -360,7 +360,7 @@ rows(_, []).
 
 map(N, Map) :- !,
     create_var_matrix(N, Map),
-    set_diagonal(-1,Map,N,N,N),
+    set_diagonal(0,Map,N,N,N),
     transpose(Map, Map).
 
 % sets the main diagonal to be DiagVal
