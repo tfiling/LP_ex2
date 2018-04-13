@@ -190,13 +190,13 @@ verify_ramsey(r(S, T, N), Solution, ramsey) :-
 % find ramsey(r(S, T, N), Solution)
 
 % make_row_first_element(N+, Matrix-) - generates a random top half of adjacency matrix
-make_row_first_element(N, [[0 | Rest] | AccTail]) :-
+make_row_first_element(N, [[-1 | Rest] | AccTail]) :-
     N > 1,
     N1 is N - 1,
     make_row_tail(N1, Rest),
     make_row_first_element(N1, AccTail).
 
-make_row_first_element(1, [[0]]).
+make_row_first_element(1, [[-1]]).
 
 % make_row_tail(N+, Row-) - generates the tail of the row in the adjacency matrix
 make_row_tail(N, [0 | Rest]) :-
@@ -258,3 +258,28 @@ list_vertices_to_edges([X1, X2 | RestV], Matrix, [Edge | RestE1E2]) :-
 
 list_vertices_to_edges([], _, []).
 list_vertices_to_edges([_], _, []).
+
+create_var_matrix(N, Matrix):- 
+    length(Matrix, N),
+    rows(N, Matrix).
+
+rows(N, [X | Xs]) :-
+    length(X, N),
+    rows(N, Xs).
+
+rows(_, []).
+
+map(N, Map) :- !,
+    create_var_matrix(N, Map),
+    set_diagonal(-1,Map,N,N,N),
+    transpose(Map, Map).
+
+% sets the main diagonal to be Number
+set_diagonal(_,[],RowLen,0,RowLen).
+set_diagonal(Number,[[Number|_]|RestRows],N,N,RowLen) :-
+	N1 is N - 1,
+	set_diagonal(Number,RestRows,RowLen,N1,RowLen).
+set_diagonal(Number,[[_|RestRow]|RestRows],N,M,RowLen) :-
+	N \= M,
+	N1 is N - 1,
+	set_diagonal(Number,[RestRow|RestRows],N1,M,RowLen).
