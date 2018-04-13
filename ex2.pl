@@ -363,12 +363,52 @@ map(N, Map) :- !,
     set_diagonal(-1,Map,N,N,N),
     transpose(Map, Map).
 
-% sets the main diagonal to be Number
+% sets the main diagonal to be DiagVal
 set_diagonal(_,[],RowLen,0,RowLen).
-set_diagonal(Number,[[Number|_]|RestRows],N,N,RowLen) :-
+set_diagonal(DiagVal,[[DiagVal|_]|RestRows],N,N,RowLen) :-
 	N1 is N - 1,
-	set_diagonal(Number,RestRows,RowLen,N1,RowLen).
-set_diagonal(Number,[[_|RestRow]|RestRows],N,M,RowLen) :-
+	set_diagonal(DiagVal,RestRows,RowLen,N1,RowLen).
+set_diagonal(DiagVal,[[_|RestRow]|RestRows],N,M,RowLen) :-
 	N \= M,
 	N1 is N - 1,
-	set_diagonal(Number,[RestRow|RestRows],N1,M,RowLen).
+	set_diagonal(DiagVal,[RestRow|RestRows],N1,M,RowLen).
+
+negate_matrix([[H | T] | RestRows], [[-H | NegTail] | RestNegRows]) :-
+    negate_matrix([T | RestRows], [NegTail | RestNegRows]).
+
+negate_matrix([[] | RestRows], [[] | RestNegRows]) :-
+    negate_matrix(RestRows, RestNegRows).
+
+negate_matrix([], []).
+
+
+reverse_vertices_list([H | T], [HR | TR]) :-
+    reverse(H, HR),
+    writeln(T),
+    reverse_vertices_list(T, TR).
+
+reverse_vertices_list([], []).
+
+
+encode_ramsey(r(S, T, N), Map, CNF) :-
+    map(N, Map),
+    choose_k_from_n(S, N, Vs1R),
+    reverse_vertices_list(Vs1R, Vs1),
+    list_list_vertices_to_edges(Vs1, Map, CNF1),
+    negate_matrix(Map, NegMap),
+    choose_k_from_n(T, N, Vs2R),
+    reverse_vertices_list(Vs2, Vs2R),
+    list_list_vertices_to_edges(Vs2, NegMap, CNF2),
+    append(CNF1, CNF2, CNF),
+    print_all(Vs1, Vs2),
+    writeln('map:'),
+    print_mat(Map),
+    writeln('CNF:'),
+    print_mat(CNF).
+
+
+print_all(Vs1, Vs2) :-
+    writeln('vs1:'),
+    print_mat(Vs1),
+    writeln('vs2:'),
+    print_mat(Vs2).
