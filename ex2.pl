@@ -281,7 +281,7 @@ choose_k_from_n(K, N, [First|Rest]) :-
 choose_k_from_n_aux(_, Last, Last, []).
 choose_k_from_n_aux(N, Prev, Last, [Next|Rest]) :-
     increment(N, Prev, [], Next),
-    choose_k_from_n_aux(N, Next, Last, Rest).
+    choose_k_from_n_aux(N, Next, Last, Rest), !.
 
 first(K, N, First) :-
     integer(K),
@@ -316,10 +316,11 @@ cut_first_elements(NumElementsToCut, [_|List], CuttedList) :-
 
 cut_first_elements(0, List, CuttedList) :-
     CuttedList = List.
-
+    
 increment(N, [Element|RestElements], Acc, Next) :-      %Get to a digit that is less than N.. Add 1 to it and return result
     Element < N,
     Element1 is Element + 1,
+    \+ member(Element1, Acc),                           %check that no duplicates
     append(Acc, [Element1], List),                      %Add all of the accumulated digits from when Element = N to the digit we just increased by 1
     append(List, RestElements, Next).                   %Add all of the untouched digits (RestElements).
 
@@ -329,11 +330,32 @@ increment(N, [Element|RestElements], Acc, Next) :-
     N1 is N - 1,
     increment(N1, RestElements, [Element1|Acc], Next).  %Accumulate all of the digits that are = N.
 
+increment(N, [Element|RestElements], [FirstAcc|RestAcc], Next) :-
+    integer(FirstAcc),
+    Element < N,
+    Element1 is Element + 1,
+    \+ member(Element1, RestAcc),
+    Element1 \= FirstAcc,
+    Element2 is FirstAcc + 1,
+    append([Element2], [Element1], ListElements),
+    append(ListElements, RestAcc, AccBefore),
+    append(RestElements, AccBefore, Next).
+
+increment(N, [Element|RestElements], [FirstAcc|RestAcc], Next) :-
+    integer(FirstAcc),
+    Element = N,
+    Element = FirstAcc,
+    Element2 is Element + 1,
+    append([Element2], [Element], ListElements),
+    append(ListElements, RestAcc, Acc),
+    N1 is N - 1,
+    increment(N1,RestElements, Acc, Next).
+
 
 % list_list_vertices_to_edges(List_of_lists_of_vertices+, Matrix+, List_of_lists_of_edges-)
 list_list_vertices_to_edges([H | Tail], Matrix, [HEdges | TailEdges]) :-
     list_vertices_to_edges(H, Matrix, HEdges),
-    list_list_vertices_to_edges(Tail, Matrix, TailEdges).
+    list_list_vertices_to_edges(Tail, Matrix, TailEdges). 
 
 list_list_vertices_to_edges([], _, []).
 
