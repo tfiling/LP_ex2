@@ -427,7 +427,6 @@ negate_matrix([], []).
 
 reverse_vertices_list([H | T], [HR | TR]) :-
     reverse(H, HR),
-    writeln(T),
     reverse_vertices_list(T, TR).
 
 reverse_vertices_list([], []).
@@ -455,3 +454,22 @@ print_all(Vs1, Vs2) :-
     print_mat(Vs1),
     writeln('vs2:'),
     print_mat(Vs2).
+
+solve_ramsey(r(3,3,5), Solution) :-
+    encode_ramsey(r(3,3,5), Map, CNF),
+    sat(CNF),
+    decode_ramsey(Map, Solution).
+    
+
+% replace(A, B, C, D) in mode (+, +, +, -) replaces any occurance of A with B and B with A in list C
+% from our solution to ex1
+replace(_, _, [], []).
+replace(O, R, [O|T], [R|T2]) :- replace(O, R, T, T2).
+replace(O, R, [R|T], [O|T2]) :- replace(O, R, T, T2).
+replace(O, R, [H|T], [H|T2]) :- H \= O, H \= R, replace(O, R, T, T2).
+
+decode_ramsey([Hmap | Tmap], [Hsol, Tsol]) :-
+    replace(0, -1, Hmap, Hsol),
+    decode_ramsey(Tmap, Tsol).
+
+decode_ramsey([], []).
