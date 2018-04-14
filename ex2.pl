@@ -214,7 +214,7 @@ clique([X1,X2|R], Graph, Color) :-
 % inspired from https://en.wikibooks.org/wiki/Introduction_to_Programming_Languages/Exhaustive_Searches
 cliqueN(C, N, [H | T], Color) :- 
     length(H, Len),
-    findall(Num, between(1, Len, Num), VertexList),
+    create_list_size_n(1, VertexList, Len),
     sublist(C, VertexList), 
     length(C, N),
     clique(C, [H | T], Color).
@@ -307,15 +307,15 @@ print_mat([]).
 
 %-----------------------------------------------------%
 
-%create list of 1..n
-create_list_size_n(0, Acc, List) :-
-    Acc = List.
+%choose_n_from_k => based on the code learnt in class
 
-create_list_size_n(N, Acc, List) :-
-    N1 is N - 1,
-    create_list_size_n(N1, [N|Acc], List).
+create_list_size_n(N, [N | Acc], OriginalLen) :-
+    N < OriginalLen,
+    N1 is N + 1,
+    create_list_size_n(N1, Acc, OriginalLen).
 
-%choose_k_from_n => based on the code learnt in class
+create_list_size_n(N, [N], N).
+
 choose_k_from_n(K, N, [First|Rest]) :-
     first(K, N, First),
     last(K, N, Last),
@@ -330,8 +330,7 @@ first(K, N, First) :-
     integer(K),
     integer(N),
     K =< N,
-    create_list_size_n(N, [], ListOfN),
-    !,
+    create_list_size_n(1, ListOfN, N),
     first(K, ListOfN, [], First).
 first(K, [Element|RestListOfN], Acc, First) :-
     K > 0,
@@ -345,7 +344,7 @@ last(K, N, Last) :-
     integer(K),
     integer(N),
     K =< N,
-    create_list_size_n(N, [], ListOfN),
+    create_list_size_n(1, ListOfN, N),
     NumberOfElementsToCut is N - K,
     cut_first_elements(NumberOfElementsToCut, ListOfN, List),       %cut out the N-K of the first elements
     !,
@@ -405,7 +404,7 @@ rows(N, [X | Xs]) :-
 
 rows(_, []).
 
-map(N, Map) :- !,
+map(N, Map) :- 
     create_var_matrix(N, Map),
     set_diagonal(0,Map,N,N,N),
     transpose(Map, Map).
