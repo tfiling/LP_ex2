@@ -56,20 +56,63 @@ null_rows([]).
 % row, column, row, column
 % fail if not enough space for rest of row
 
-nonogram_solve(nonogram(N, M, ColData, RowData), Solution) :-
+
+% replace_0s_in_row([E1|Row], [E2|X], [1|Answer]) :-
+%     E1 = 1,
+%     E2 = 0,
+%     replace_0s_in_row(Row, X, Answer).
+
+% replace_0s_in_row([E1|Row], [E2|X], [1|Answer]) :-
+%     E1 = 0,
+%     E2 = 1,
+%     replace_0s_in_row(Row, X, Answer).
+
+% replace_0s_in_row([E1|Row], [E2|X], [1|Answer]) :-
+%     E1 = 1,
+%     E2 = 1,
+%     replace_0s_in_row(Row, X, Answer).
+
+% replace_0s_in_row([E1|Row], [E2|X], [0|Answer]) :-
+%     E1 = 0,
+%     E2 = 0,
+%     replace_0s_in_row(Row, X, Answer).
+
+replace_0s_in_row(I, N, [E1|Row], [E2|X], [0|Answer]) :-
+    E2 = 0,
+    E1 = 0,
+    I1 is I + 1,
+    replace_0s_in_row(I1, N, Row, X, Answer).
+
+replace_0s_in_row(I, N, [_|Row], [_|X], [1|Answer]) :-
+    I1 is I + 1,
+    replace_0s_in_row(I1, N, Row, X, Answer).
+
+replace_0s_in_row(I,N,[],[],[]) :-
+    I = N.
+
+nonogram_solve(N, M, ColData, RowData, Solution) :-
     generate_matrix(N, M, Solution),                                %create matrix of N X M free variables
     transpose(Solution, TransposedSolution),
-    try_solve_row_simple_boxes(M, ColData, TransposedSolution),     %fill in necessary boxes for columns
-    try_solve_row_simple_boxes(N, RowData, Solution),               %fill in necessary boxes for rows
-    solve_nanogram().
+    try_solve_row_simple_boxes(M, N, ColData, TransposedSolution),     %fill in necessary boxes for columns
+    try_solve_row_simple_boxes_with_values(N, M, RowData, Solution).               %fill in necessary boxes for rows
+    % solve_nanogram().
 
-try_solve_row_simple_boxes(N, [Data|RestData], [Row|RestRows]) :-
+try_solve_row_simple_boxes_with_values(N, M, [Data|RestData], [Row|RestRows]) :-
     N > 0,
-    simple_box(N, Data, Row),
+    simple_box(M, Data, X),
+    replace_0s_in_row(0, M, Row, X, NewRow),
+    % Row = NewRow,
     N1 is N - 1,
-    try_solve_row_simple_boxes(N1, RestData, RestRows).
+    try_solve_row_simple_boxes_with_values(N1, M, RestData, RestRows).
 
-try_solve_row_simple_boxes(0, [], []).
+
+try_solve_row_simple_boxes(N, M, [Data|RestData], [Row|RestRows]) :-
+    N > 0,
+    simple_box(M, Data, Row),
+    N1 is N - 1,
+    try_solve_row_simple_boxes(N1, M, RestData, RestRows).
+
+try_solve_row_simple_boxes(0, _, [], []).
 
 generate_matrix(N, M, [Row|RestRows]) :-                            
     N > 0,
@@ -262,11 +305,9 @@ print_mat([H | T]) :-
 
 print_mat([]).
 
-
-
 %-----------------------------------------------------%
 
-%choose_n_from_k => based on the code learnt in class
+%create list of 1..n
 create_list_size_n(0, Acc, List) :-
     Acc = List.
 
@@ -274,15 +315,17 @@ create_list_size_n(N, Acc, List) :-
     N1 is N - 1,
     create_list_size_n(N1, [N|Acc], List).
 
+%choose_k_from_n => based on the code learnt in class
 choose_k_from_n(K, N, [First|Rest]) :-
     first(K, N, First),
     last(K, N, Last),
     choose_k_from_n_aux(N, First, Last, Rest).
 choose_k_from_n_aux(_, Last, Last, []).
 choose_k_from_n_aux(N, Prev, Last, [Next|Rest]) :-
-    increment(N, Prev, [], Next),
+    increment(N, Prev, Next),
     choose_k_from_n_aux(N, Next, Last, Rest).
 
+%find first element in kchoosen
 first(K, N, First) :-
     integer(K),
     integer(N),
@@ -297,6 +340,7 @@ first(K, [Element|RestListOfN], Acc, First) :-
 first(0, _, Acc, First) :-
     Acc = First.
 
+%find last element in kchoosen
 last(K, N, Last) :-
     integer(K),
     integer(N),
@@ -317,17 +361,20 @@ cut_first_elements(NumElementsToCut, [_|List], CuttedList) :-
 cut_first_elements(0, List, CuttedList) :-
     CuttedList = List.
 
-increment(N, [Element|RestElements], Acc, Next) :-      %Get to a digit that is less than N.. Add 1 to it and return result
-    Element < N,
-    Element1 is Element + 1,
-    append(Acc, [Element1], List),                      %Add all of the accumulated digits from when Element = N to the digit we just increased by 1
-    append(List, RestElements, Next).                   %Add all of the untouched digits (RestElements).
+%increment function we use in kchoosen
+increment(0,[],[]).
 
-increment(N, [Element|RestElements], Acc, Next) :-
-    Element = N,
-    Element1 is Element - 1,
+increment(N,[PrevNum|Next],[NextNum|Next]):-
+    N > 0,
+    PrevNum < N,
+    NextNum is PrevNum + 1.
+
+increment(N,[Prev1|RestPrevNum],[Next1, Next2|Next]):-
+    N > 0,
+    Prev1 == N,
     N1 is N - 1,
-    increment(N1, RestElements, [Element1|Acc], Next).  %Accumulate all of the digits that are = N.
+    increment(N1,RestPrevNum,[Next2|Next]),
+    Next1 is Next2 + 1.                                       %increment remaining number
 
 
 % list_list_vertices_to_edges(List_of_lists_of_vertices+, Matrix+, List_of_lists_of_edges-)
