@@ -56,81 +56,50 @@ null_rows([]).
 % row, column, row, column
 % fail if not enough space for rest of row
 
+put_ones([1|Block]):-
+	put_ones(Block).
+put_ones([]).
+
+put_zeros([0|Block]):-
+	put_zeros(Block).
+put_zeros([]).
+
+
+%Solved by brute-force. Initially tried solving with algorithms suggested in class but had problems 
+%with assigning results to 0s and 1s that were already assigned a result, so it always failed.
 nonogram_solve(nonogram(N,M,ColData,RowData), Solution):-
-	place_rows(N,M,RowData,Solution),
+	generate_rows(N,M,RowData,Solution),
+    is_nanogram_by_rows(N, RowData, Solution),
     transpose(Solution, TSolution),
-    is_nanogram_by_rows(M, ColData, TSolution).
+    is_nanogram_by_rows(M, ColData, TSolution), !.
 
-place_rows(N,M,[Row|RestRows],[Sol|RestSol]):-
+generate_rows(N,M,[Row|RestRows],[Sol|RestSol]):-
 	N > 0,
-	nonogram_solve_helper(Row,M,Sol),
+	generate_row(Row, M, Sol),
 	N1 is N - 1,
-	place_rows(N1,M,RestRows,RestSol).
-place_rows(0,_,[],[]).
-	
-nonogram_solve_helper(RowData, N, Solution):-
-	length(Solution, N), 
-	place_block(RowData, Solution).
-	
-place_block([D1,D2|RowData], Solution):-
-	length(Block, D1), 
-	ones(Block),
-	append(Block, [0|Rest], Solution), 
-	place_block([D2|RowData], Rest).
+	generate_rows(N1, M, RestRows, RestSol).
 
-place_block([RowData], Solution):-
+generate_rows(0, _, [], []).
+	
+generate_row(RowData, N, Sol):-
+	length(Sol, N), 
+	put_blocks(RowData, Sol).
+	
+put_blocks([RowData], Sol):-
 	length(Block, RowData), 
-	ones(Block),
-	append(Block, Rest, Solution), 
-	zero(Rest).
+	put_ones(Block),                    
+	append(Block, Rest, Sol), 
+	put_zeros(Rest).                    %fill in the rest with zeros
 
-place_block(RowData, [0|Solution]):-
-	place_block(RowData, Solution).
+put_blocks([D1,D2|RowData], Sol):-
+	length(Block, D1), 
+	put_ones(Block),
+	append(Block, [0|Rest], Sol), 
+	put_blocks([D2|RowData], Rest).
+
+put_blocks(RowData, [0|Sol]):-
+	put_blocks(RowData, Sol).
 	
-ones([1|Block]):-
-	ones(Block).
-ones([]).
-
-zero([0|Block]):-
-	zero(Block).
-zero([]).
-
-
-
-
-
-% replace_0s_in_row([E1|Row], [E2|X], [1|Answer]) :-
-%     E1 = 1,
-%     E2 = 0,
-%     replace_0s_in_row(Row, X, Answer).
-
-% replace_0s_in_row([E1|Row], [E2|X], [1|Answer]) :-
-%     E1 = 0,
-%     E2 = 1,
-%     replace_0s_in_row(Row, X, Answer).
-
-% replace_0s_in_row([E1|Row], [E2|X], [1|Answer]) :-
-%     E1 = 1,
-%     E2 = 1,
-%     replace_0s_in_row(Row, X, Answer).
-
-% replace_0s_in_row([E1|Row], [E2|X], [0|Answer]) :-
-%     E1 = 0,
-%     E2 = 0,
-%     replace_0s_in_row(Row, X, Answer).
-
-% replace_0s_in_row(I, N, [E1|Row], [E2|X], [0|Answer]) :-
-%     E2 = 0,
-%     E1 = 0,
-%     I1 is I + 1,
-%     replace_0s_in_row(I1, N, Row, X, Answer).
-
-% replace_0s_in_row(I, N, [_|Row], [_|X], [1|Answer]) :-
-%     I1 is I + 1,
-%     replace_0s_in_row(I1, N, Row, X, Answer).
-
-% replace_0s_in_row(I,N,[],[],[]) :-
-%     I = N.
 
 % Algorithms for nanogram solver
 
@@ -152,7 +121,6 @@ find_intersections([LeftElement|RowLeft], [RightElement|RowRight], [0|Row]) :-
 find_intersections([LeftElement|RowLeft], [RightElement|RowRight], [0|Row]) :-
     LeftElement \= RightElement,
     find_intersections(RowLeft, RowRight, Row).
-
 
 simple_box_right(N, Data, Row) :-
     reverse(Data, DataReversed),
@@ -194,6 +162,19 @@ row_sum([Element|RestData], Init, Sum) :-
 
 row_sum([], Init, Sum) :-
     Init = Sum.
+
+replace_0s_in_row(I, N, [E1|Row], [E2|X], [0|Answer]) :-
+    E2 = 0,
+    E1 = 0,
+    I1 is I + 1,
+    replace_0s_in_row(I1, N, Row, X, Answer).
+
+replace_0s_in_row(I, N, [_|Row], [_|X], [1|Answer]) :-
+    I1 is I + 1,
+    replace_0s_in_row(I1, N, Row, X, Answer).
+
+replace_0s_in_row(I,N,[],[],[]) :-
+    I = N.
 
 %-----------------------------------------------------%
 % Task 3 - A Ramsey Verifier
