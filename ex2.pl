@@ -71,7 +71,7 @@ nonogram_solve(nonogram(N,M,ColData,RowData), Solution):-
 	generate_rows(N,M,RowData,Solution),
     is_nanogram_by_rows(N, RowData, Solution),
     transpose(Solution, TSolution),
-    is_nanogram_by_rows(M, ColData, TSolution), !.
+    is_nanogram_by_rows(M, ColData, TSolution).
 
 generate_rows(N,M,[Row|RestRows],[Sol|RestSol]):-
 	N > 0,
