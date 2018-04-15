@@ -192,7 +192,8 @@ row_sum([], Init, Sum) :-
 %-----------------------------------------------------%
 % Task 3 - A Ramsey Verifier
 
-% edge(X+, Y+, Graph+, Color+) - true if X and Y vertexes are connected by an edge
+% edge(X+, Y+, Graph+, Color+) - true if X and Y vertexes are connected by an edge of Color in Graph (adjacency matrix)
+% finds the relevant row according to X and checks if the Yth element is of color Color
 edge(X, Y, [Row | _], Color) :- 
     X is 1,
     nth1(Y, Row, Color).
@@ -203,6 +204,7 @@ edge(X, Y, [_ | T], Color) :-
     edge(Z, Y, T, Color).
 
 % clique(VertexList+, Graph+, Color+) - true if the vertexes listed in VertexList list are a clique in Graph with edges of color Color
+% for each two vertices in VertexList it checks that the first two vertices connected by edge and that both recursively has an edge with the rest in VertexList
 clique([], _, _).
 clique([_], _, _).
 clique([X1,X2|R], Graph, Color) :- 
@@ -210,8 +212,9 @@ clique([X1,X2|R], Graph, Color) :-
     clique([X1|R], Graph, Color), 
     clique([X2|R], Graph, Color).
 
-% cliqueN(C-, N+, Graph+, Color+) - true exists a C, sublist of the vertexes of size N, which is a clique of edges with color Color
+% cliqueN(C-, N+, Graph+, Color+) - true if exists a C, sublist of the vertexes of size N, which is a clique of edges with color Color
 % inspired from https://en.wikibooks.org/wiki/Introduction_to_Programming_Languages/Exhaustive_Searches
+% checks for each sub list of size N if it is a N size clique of color Color
 cliqueN(C, N, [H | T], Color) :- 
     length(H, Len),
     create_list_size_n(1, VertexList, Len),
@@ -219,8 +222,10 @@ cliqueN(C, N, [H | T], Color) :-
     length(C, N),
     clique(C, [H | T], Color).
 
-% sublist(SubList-, List) - true is exists SubList which is a sublist of List where the elements order is kept
+% sublist(SubList-, List+) - true is exists SubList which is a sublist of List where the elements order is kept
+% simply used by us to generate sublists of List
 % copied from https://stackoverflow.com/questions/7051400/prolog-first-list-is-sublist-of-second-list (ДМИТРИЙ МАЛИКОВ's answer)
+% for each item X of the list there is a predicate which is true when X in the sublist and another predicate that is true when X is not in the sublist
 sublist([], _).
 sublist([X|XS], [X|XSS]) :- sublist(XS, XSS).
 sublist([X|XS], [_|XSS]) :- sublist([X|XS], XSS).
@@ -239,13 +244,15 @@ find_all_bad_cliques(S, N, Solution, Clique, Color) :-
     cliqueN(Clique, N, Solution, Color).
 
         
-
+% true if there is a clique of color 0 with size greater or equal to S
 verify_ramsey(r(S, _, N), Solution, CounterExample) :-
     find_all_bad_cliques(S, N, Solution, CounterExample, 0).
 
+% true if there is a clique of color 1 with size greater or equal to S
 verify_ramsey(r(_, T, N), Solution, CounterExample) :-
     find_all_bad_cliques(T, N, Solution, CounterExample, 1).
 
+% always true but used only once all possibble counter examples (if exists) were shown
 verify_ramsey(_, _, ramsey).
 
 
