@@ -261,7 +261,8 @@ verify_ramsey(_, _, ramsey).
 
 % find ramsey(r(S, T, N), Solution)
 
-% make_row_first_element(N+, Matrix-) - generates a random top half of adjacency matrix
+% make_row_first_element(N+, Matrix-) - generates a random top half of adjacency matrix with -1 diagonal
+% recursively creates random rows with decreasing length
 make_row_first_element(N, [[-1 | Rest] | AccTail]) :-
     N > 1,
     N1 is N - 1,
@@ -270,7 +271,8 @@ make_row_first_element(N, [[-1 | Rest] | AccTail]) :-
 
 make_row_first_element(1, [[-1]]).
 
-% make_row_tail(N+, Row-) - generates the tail of the row in the adjacency matrix
+% make_row_tail(N+, Row-) - generates the row in the adjacency matrix
+% sets 0 or 1 (predicate for each one) as many times as the original N argument
 make_row_tail(N, [0 | Rest]) :-
     N >= 1,
     N1 is N - 1,
@@ -283,7 +285,8 @@ make_row_tail(N, [1 | Rest]) :-
 
 make_row_tail(0, []).
 
-% complete_matrix(N, HalfMatrix, ResultMatrix) completes the top half of the adjacency matrix with values of "_"
+% complete_matrix(N, HalfMatrix, ResultMatrix) completes the bottom half of the adjacency matrix with values of "_"
+% for each row prepends a variable _ as long as its row is smaller than the one required
 complete_matrix(N, [HalfHead | HalfTail], [Head | Tail]) :-
     length(HalfHead, Len),
     Len < N,
@@ -296,14 +299,16 @@ complete_matrix(N, [Head | HalfTail], [Head | Tail]) :-
 complete_matrix(_, [], []).
 
 
+% checks for all of the possible matrixes if are a valid solution for the ramsey coloring
 find_ramsey(r(S, T, N), Solution) :-
-    make_row_first_element(N, HalfMatrix),
+    make_row_first_element(N, HalfMatrix),          
     complete_matrix(N, HalfMatrix, Solution),
     transpose(Solution, Solution),                  % a valid adjacency is symetric which means that it equal to its transpos 
                                                     % -> will fill the "_" values applied from complete_matrix
     verify_ramsey(r(S, T, N), Solution, ramsey),
     print_mat(Solution).
 
+% print_mat(Mat+) - pretty print the matrix for your comfort :-)
 print_mat([H | T]) :-
     writeln(H),
     print_mat(T).
@@ -311,7 +316,7 @@ print_mat([H | T]) :-
 print_mat([]).
 
 %-----------------------------------------------------%
-
+% Part 3: Ramsey Graphs (SAT)
 %choose_n_from_k => based on the code learnt in class
 
 create_list_size_n(N, [N | Acc], OriginalLen) :-
@@ -381,6 +386,7 @@ increment(N,[Prev1|RestPrevNum],[Next1, Next2|Next]):-
 
 
 % list_list_vertices_to_edges(List_of_lists_of_vertices+, Matrix+, List_of_lists_of_edges-)
+% recursively converts each vertices list into edges list by using list_vertices_to_edges
 list_list_vertices_to_edges([H | Tail], Matrix, [HEdges | TailEdges]) :-
     list_vertices_to_edges(H, Matrix, HEdges),
     list_list_vertices_to_edges(Tail, Matrix, TailEdges).
@@ -388,6 +394,8 @@ list_list_vertices_to_edges([H | Tail], Matrix, [HEdges | TailEdges]) :-
 list_list_vertices_to_edges([], _, []).
 
 % list_list_vertices_to_edges(list_of_vertices+, Matrix+, list_of_edges-)
+% using the same approach we used when checking if the vertex list is a clique - 
+%   for the first two vertices add the edge connecting them and recursively add the edges between them and the rest of the list (similarly to edge predicate)
 list_vertices_to_edges([X1, X2 | RestV], Matrix, [Edge | RestE1E2]) :-
     nth1(X1, Matrix, Row),
     nth1(X2, Row, Edge),
@@ -398,16 +406,20 @@ list_vertices_to_edges([X1, X2 | RestV], Matrix, [Edge | RestE1E2]) :-
 list_vertices_to_edges([], _, []).
 list_vertices_to_edges([_], _, []).
 
+% create_var_matrix(N+, Matrix-) - create a matrix of size N*N filled with variables
 create_var_matrix(N, Matrix):- 
     length(Matrix, N),
     rows(N, Matrix).
 
+% rows(N+, Rows+) - each item in Rows is a list of size N (used for craete matrix)
 rows(N, [X | Xs]) :-
     length(X, N),
     rows(N, Xs).
 
 rows(_, []).
 
+% map(N+, Map-) - creates a Map matrix to be used when decoding the solution of the SAT solver
+% creates an empty matrix (filled with _ ), sets the diagonal to be 0s and applies transpose predicate, making it a valid adjacency matrix
 map(N, Map) :- 
     create_var_matrix(N, Map),
     set_diagonal(0,Map,N,N,N),
@@ -423,6 +435,8 @@ set_diagonal(DiagVal,[[_|RestRow]|RestRows],N,M,RowLen) :-
 	N1 is N - 1,
 	set_diagonal(DiagVal,[RestRow|RestRows],N1,M,RowLen).
 
+% negate_matrix(Matrix+, NegMatrix-) - applies a negative wrapper on each element of the matrix (used for the creation of the part for the T edge color on the CNF)
+% not something complicated, simply iterateds recursively over each item in each row and wrapps it with -1
 negate_matrix([[H | T] | RestRows], [[-H | NegTail] | RestNegRows]) :-
     negate_matrix([T | RestRows], [NegTail | RestNegRows]).
 
@@ -431,14 +445,18 @@ negate_matrix([[] | RestRows], [[] | RestNegRows]) :-
 
 negate_matrix([], []).
 
-
+% reverse_vertices_list(List+, ReversedList-) - reverses each vertex list in List (which should be a list of lists)
 reverse_vertices_list([H | T], [HR | TR]) :-
     reverse(H, HR),
     reverse_vertices_list(T, TR).
 
 reverse_vertices_list([], []).
 
-
+% as explained in class:
+%   creates a map of variables to be used for the decoding of the solution
+%   generates all possible edges connecting any possible vertex list of size S and T
+%   each edge in the T list is wrapped with - since this is a different coloring
+%   all is appended to one CNF expression which is pretty printed for your comfort
 encode_ramsey(r(S, T, N), Map, CNF) :-
     map(N, Map),
     choose_k_from_n(S, N, Vs1R),
@@ -449,19 +467,9 @@ encode_ramsey(r(S, T, N), Map, CNF) :-
     reverse_vertices_list(Vs2, Vs2R),
     list_list_vertices_to_edges(Vs2, NegMap, CNF2),
     append(CNF1, CNF2, CNF),
-    print_all(Vs1, Vs2),
-    writeln('map:'),
-    print_mat(Map),
-    writeln('CNF:'),
     print_mat(CNF).
 
-
-print_all(Vs1, Vs2) :-
-    writeln('vs1:'),
-    print_mat(Vs1),
-    writeln('vs2:'),
-    print_mat(Vs2).
-
+% encode the prblem to CNF, run it on SAT solver and decode the solution if exists
 solve_ramsey(r(3,3,5), Solution) :-
     encode_ramsey(r(3,3,5), Map, CNF),
     sat(CNF),
@@ -475,6 +483,7 @@ replace(O, R, [O|T], [R|T2]) :- replace(O, R, T, T2).
 replace(O, R, [R|T], [O|T2]) :- replace(O, R, T, T2).
 replace(O, R, [H|T], [H|T2]) :- H \= O, H \= R, replace(O, R, T, T2).
 
+% replaces every 0 with -1 and vice versa to fit the original colored adjecency matrix definition which can be tested with out verify_ramsey predicate
 decode_ramsey([Hmap | Tmap], [Hsol, Tsol]) :-
     replace(0, -1, Hmap, Hsol),
     decode_ramsey(Tmap, Tsol).
