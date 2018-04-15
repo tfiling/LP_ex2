@@ -56,6 +56,48 @@ null_rows([]).
 % row, column, row, column
 % fail if not enough space for rest of row
 
+nonogram_solve(nonogram(N,M,ColData,RowData), Solution):-
+	place_rows(N,M,RowData,Solution),
+    transpose(Solution, TSolution),
+    is_nanogram_by_rows(M, ColData, TSolution).
+
+place_rows(N,M,[Row|RestRows],[Sol|RestSol]):-
+	N > 0,
+	nonogram_solve_helper(Row,M,Sol),
+	N1 is N - 1,
+	place_rows(N1,M,RestRows,RestSol).
+place_rows(0,_,[],[]).
+	
+nonogram_solve_helper(RowData, N, Solution):-
+	length(Solution, N), 
+	place_block(RowData, Solution).
+	
+place_block([D1,D2|RowData], Solution):-
+	length(Block, D1), 
+	ones(Block),
+	append(Block, [0|Rest], Solution), 
+	place_block([D2|RowData], Rest).
+
+place_block([RowData], Solution):-
+	length(Block, RowData), 
+	ones(Block),
+	append(Block, Rest, Solution), 
+	zero(Rest).
+
+place_block(RowData, [0|Solution]):-
+	place_block(RowData, Solution).
+	
+ones([1|Block]):-
+	ones(Block).
+ones([]).
+
+zero([0|Block]):-
+	zero(Block).
+zero([]).
+
+
+
+
 
 % replace_0s_in_row([E1|Row], [E2|X], [1|Answer]) :-
 %     E1 = 1,
@@ -77,51 +119,18 @@ null_rows([]).
 %     E2 = 0,
 %     replace_0s_in_row(Row, X, Answer).
 
-replace_0s_in_row(I, N, [E1|Row], [E2|X], [0|Answer]) :-
-    E2 = 0,
-    E1 = 0,
-    I1 is I + 1,
-    replace_0s_in_row(I1, N, Row, X, Answer).
+% replace_0s_in_row(I, N, [E1|Row], [E2|X], [0|Answer]) :-
+%     E2 = 0,
+%     E1 = 0,
+%     I1 is I + 1,
+%     replace_0s_in_row(I1, N, Row, X, Answer).
 
-replace_0s_in_row(I, N, [_|Row], [_|X], [1|Answer]) :-
-    I1 is I + 1,
-    replace_0s_in_row(I1, N, Row, X, Answer).
+% replace_0s_in_row(I, N, [_|Row], [_|X], [1|Answer]) :-
+%     I1 is I + 1,
+%     replace_0s_in_row(I1, N, Row, X, Answer).
 
-replace_0s_in_row(I,N,[],[],[]) :-
-    I = N.
-
-nonogram_solve(N, M, ColData, RowData, Solution) :-
-    generate_matrix(N, M, Solution),                                %create matrix of N X M free variables
-    transpose(Solution, TransposedSolution),
-    try_solve_row_simple_boxes(M, N, ColData, TransposedSolution),     %fill in necessary boxes for columns
-    try_solve_row_simple_boxes_with_values(N, M, RowData, Solution).               %fill in necessary boxes for rows
-    % solve_nanogram().
-
-try_solve_row_simple_boxes_with_values(N, M, [Data|RestData], [Row|RestRows]) :-
-    N > 0,
-    simple_box(M, Data, X),
-    replace_0s_in_row(0, M, Row, X, NewRow),
-    % Row = NewRow,
-    N1 is N - 1,
-    try_solve_row_simple_boxes_with_values(N1, M, RestData, RestRows).
-
-
-try_solve_row_simple_boxes(N, M, [Data|RestData], [Row|RestRows]) :-
-    N > 0,
-    simple_box(M, Data, Row),
-    N1 is N - 1,
-    try_solve_row_simple_boxes(N1, M, RestData, RestRows).
-
-try_solve_row_simple_boxes(0, _, [], []).
-
-generate_matrix(N, M, [Row|RestRows]) :-                            
-    N > 0,
-    N1 is N - 1,
-    length(Row, M),
-    generate_matrix(N1, M, RestRows).
-
-generate_matrix(0, _, []).
-
+% replace_0s_in_row(I,N,[],[],[]) :-
+%     I = N.
 
 % Algorithms for nanogram solver
 
@@ -179,15 +188,12 @@ solve_simple_box_left(NumberOfBoxesLeft, [], [0|RestRow]) :-                    
 
 solve_simple_box_left(0, [], []).
 
-
 row_sum([Element|RestData], Init, Sum) :-
     Sum1 is Init + Element,
     row_sum(RestData, Sum1, Sum).
 
 row_sum([], Init, Sum) :-
     Init = Sum.
-
-
 
 %-----------------------------------------------------%
 % Task 3 - A Ramsey Verifier
